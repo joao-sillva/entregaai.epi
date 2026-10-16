@@ -201,7 +201,15 @@ canvas{width:100%;height:120px;border:1.5px dashed #c6c9d1;border-radius:14px;ba
 @media print{#gate,#guide{display:none!important}}
 @media(max-width:760px){.who span{display:none}.gcard,.gdc{padding:26px 20px}.gdc h1{font-size:24px}.gdf{margin:18px -20px -26px;padding:14px 20px 18px}}
 @media print{#toasts{display:none!important}}
-@media print{body{background:#fff!important}.top,body>.app,#empDlg,#epiDlg{display:none!important}#fichaDlg{position:static;box-shadow:none;width:100%;padding:0;background:#fff;border-radius:0}#fichaDlg .row{display:none}dialog::backdrop{display:none}}
+#printArea{display:none}
+@page{size:A4 portrait;margin:10mm}
+@media print{
+html.pf body>*:not(#printArea){display:none!important}
+html.pf #printArea{display:block}
+html.pf body{background:#fff!important}
+html.pf #printArea .ficha{border:1px solid #222;background:#fff;color:#111;font-size:12px;width:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+html.pf #printArea tr,html.pf #printArea .fs,html.pf #printArea .fh,html.pf #printArea .fi{break-inside:avoid}
+}
 @media(max-width:480px){dialog{padding:22px 18px}.row button{flex:1 1 auto}#epiDlg .row{bottom:-22px;margin-bottom:-22px;padding-bottom:18px}}
 @media(max-width:760px){.top{padding:10px 16px;flex-wrap:wrap}.brand span{display:none}.nv{order:3;width:100%;justify-content:center}.app{padding:24px 16px 56px}.ph h1{font-size:28px}.grid{grid-template-columns:1fr}.abc{flex-wrap:nowrap;overflow-x:auto;width:auto}.abc button{flex:none}}
 </style>
@@ -305,6 +313,7 @@ canvas{width:100%;height:120px;border:1.5px dashed #c6c9d1;border-radius:14px;ba
   <div class="row"><button onclick="delDlg.close()">Cancelar</button><button class="pri" style="background:#c0392b;border-color:#c0392b" id="delBtn" onclick="doDel()">Excluir</button></div>
 </dialog>
 
+<div id="printArea" aria-hidden="true"></div>
 <div id="toasts" aria-live="polite"></div>
 <div id="gate">
   <div class="gcard">
@@ -429,13 +438,16 @@ function toast(t,d,k){
   let done=false;const close=()=>{if(done)return;done=true;e.classList.add('out');setTimeout(()=>e.remove(),270)};
   e.querySelector('button').onclick=close;e.querySelector('.tb').addEventListener('animationend',close);w.appendChild(e);
 }
+function prepPrint(){if(fichaDlg.open){$('printArea').innerHTML='<div class="ficha">'+$('fichaBody').innerHTML+'</div>';document.documentElement.classList.add('pf')}}
+function endPrint(){document.documentElement.classList.remove('pf');$('printArea').innerHTML=''}
+window.addEventListener('beforeprint',prepPrint);window.addEventListener('afterprint',endPrint);
 function imprimir(){
-  let ok=false;const h=()=>{ok=true};window.addEventListener('beforeprint',h,{once:true});
+  prepPrint();let ok=false;const h=()=>{ok=true};window.addEventListener('beforeprint',h,{once:true});
   try{window.print()}catch(e){}
   setTimeout(()=>{
     window.removeEventListener('beforeprint',h);
     if(ok)return;
-    exportPdf();
+    endPrint();exportPdf();
     const m=$('pdfMsg');m.style.color='var(--mu)';m.textContent='A impressão direta não está disponível aqui. Gerei o PDF da ficha: salve e imprima o arquivo.';
   },700);
 }
